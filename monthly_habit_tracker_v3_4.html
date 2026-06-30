@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Habit Tracker</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { zoom: 0.9; }
+html, body { height: 100%; width: 100%; }
+body {
+  background: #0e1017;
+  color: #e6e8ed;
+  font-family: Inter, system-ui, sans-serif;
+  min-height: 100vh;
+}
+.wrap { background: #12141c; min-height: 100vh; padding: 20px 24px; }
+
+/* ── HEADER ── */
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.title { font-size: 1.2rem; font-weight: 700; color: #f4f7ff; }
+.subtitle { font-size: 0.85rem; color: #9ca3af; margin-top: 2px; }
+.month-nav { display: flex; align-items: center; gap: 8px; }
+.nav-btn {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(148,163,184,0.18);
+  color: #dbe1ff; width: 34px; height: 34px; border-radius: 50%;
+  cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.12); }
+.month-label {
+  font-size: 0.95rem; font-weight: 600; color: #f8fafc;
+  min-width: 90px; text-align: center; padding: 6px 14px;
+  border: 1px solid rgba(148,163,184,0.18); border-radius: 20px;
+  background: rgba(255,255,255,0.04);
+}
+.sun-btn {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(148,163,184,0.18);
+  width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── STAT CARDS ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 14px; }
+.stat-card {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(148,163,184,0.14);
+  border-radius: 16px; padding: 16px 18px; text-align: center;
+}
+.stat-icon { font-size: 1.5rem; margin-bottom: 6px; }
+.stat-label { font-size: 0.72rem; color: #94a3b8; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+.stat-value { font-size: 1.3rem; font-weight: 700; color: #f8fafc; }
+
+/* ── WEEK CARDS ── */
+.week-summary { display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-bottom: 16px; }
+.week-card {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(148,163,184,0.14);
+  border-radius: 16px; padding: 14px 10px; text-align: center;
+  transition: transform 0.2s, border-color 0.2s; cursor: default;
+}
+.week-card:hover { transform: translateY(-2px); border-color: rgba(148,163,184,0.3); }
+.wlabel { font-size: 0.68rem; color: #94a3b8; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; }
+.wpct { font-size: 1.2rem; font-weight: 800; color: #fff; margin-top: 6px; }
+.donut { width: 48px; height: 48px; margin: 0 auto; }
+.donut circle { fill: none; stroke-width: 6; }
+.donut .track { stroke: rgba(148,163,184,0.15); }
+
+/* ── CUSTOM DROPDOWN ── */
+.dd-wrap {
+  position: relative;
+  display: inline-block;
+}
+.dd-trigger {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(148,163,184,0.16);
+  color: #eef2ff; padding: 6px 10px;
+  border-radius: 10px; font-size: 0.82rem;
+  cursor: pointer; user-select: none;
+  white-space: nowrap;
+  transition: border-color 0.2s, background 0.2s;
+}
+.dd-trigger:hover { border-color: rgba(148,163,184,0.3); background: rgba(255,255,255,0.07); }
+.dd-trigger.open { border-color: rgba(42,122,214,0.5); background: rgba(255,255,255,0.07); }
+.dd-arrow { font-size: 0.65rem; opacity: 0.6; transition: transform 0.2s; }
+.dd-trigger.open .dd-arrow { transform: rotate(180deg); }
+.dd-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 100%;
+  background: #1a1e2e;
+  border: 1px solid rgba(148,163,184,0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 200;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  padding: 4px;
+}
+.dd-menu.open { display: block; }
+.dd-item {
+  padding: 8px 12px;
+  font-size: 0.83rem;
+  color: #cbd5e1;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.dd-item:hover { background: rgba(42,122,214,0.15); color: #fff; }
+.dd-item.selected { background: #2a78d6; color: #fff; font-weight: 600; }
+
+/* modal dropdown (larger) */
+.dd-menu.modal-dd { min-width: 100%; }
+
+/* ── TOOLBAR ── */
+.toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: nowrap; }
+.toolbar-title {
+  font-size: 0.72rem; color: #94a3b8; letter-spacing: 0.18em;
+  font-weight: 700; text-transform: uppercase; white-space: nowrap; margin-right: 4px;
+}
+.search-wrap {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(148,163,184,0.16);
+  border-radius: 10px; padding: 6px 12px; flex: 0 0 180px;
+}
+.search-icon { font-size: 0.8rem; opacity: 0.5; }
+.search-input { background: none; border: none; outline: none; color: #eef2ff; font-size: 0.82rem; width: 100%; }
+.search-input::placeholder { color: #4a5568; }
+.spacer { flex: 1; }
+.toolbar-btn {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.18);
+  color: #dbe1ff; padding: 7px 14px; border-radius: 10px; cursor: pointer;
+  font-size: 0.82rem; white-space: nowrap; transition: background 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.toolbar-btn:hover { background: rgba(255,255,255,0.1); }
+.toolbar-btn.primary { background: #2a78d6; border-color: transparent; color: #fff; font-weight: 600; }
+.toolbar-btn.primary:hover { background: #3b8ae8; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: separate; border-spacing: 0 7px; font-size: 0.82rem; }
+th {
+  color: #7a8499; font-weight: 600; padding: 8px 4px 6px;
+  text-align: center; font-size: 0.72rem; letter-spacing: 0.06em; white-space: nowrap;
+}
+th.habit-col { text-align: left; padding-left: 12px; min-width: 110px; }
+td { padding: 8px 4px; text-align: center; vertical-align: middle; }
+tbody tr {
+  background: rgba(255,255,255,0.025); border: 1px solid rgba(148,163,184,0.1);
+  border-radius: 12px; transition: background 0.2s;
+}
+tbody tr:hover { background: rgba(255,255,255,0.05); }
+td.habit-name { text-align: left; color: #e2e8f0; font-size: 0.88rem; font-weight: 500; padding-left: 12px; white-space: nowrap; }
+td.cat-tag { padding-right: 8px; }
+.tag { font-size: 0.68rem; padding: 3px 8px; border-radius: 999px; white-space: nowrap; font-weight: 600; }
+.tag-sleep  { background: rgba(42,122,214,0.18); color: #9ec7ff; }
+.tag-health { background: rgba(27,175,122,0.18); color: #9befcd; }
+.tag-mind   { background: rgba(74,58,167,0.18);  color: #cbbef7; }
+.tag-work   { background: rgba(237,161,0,0.18);  color: #f8d57d; }
+.tag-social { background: rgba(232,123,164,0.18);color: #f7a9d0; }
+.cb {
+  width: 18px; height: 18px; border-radius: 5px;
+  border: 1.5px solid rgba(148,163,184,0.35); cursor: pointer;
+  display: inline-block; transition: transform 0.15s, background 0.15s; vertical-align: middle;
+}
+.cb:hover { transform: scale(1.1); border-color: rgba(148,163,184,0.7); }
+.cb.done { border-color: transparent; }
+@keyframes checkPulse { 0%{transform:scale(0.85)} 70%{transform:scale(1.1)} 100%{transform:scale(1)} }
+.cb.done { animation: checkPulse 0.2s ease; }
+.cb-sleep.done  { background: #2a78d6; }
+.cb-health.done { background: #1baf7a; }
+.cb-mind.done   { background: #4a3aa7; }
+.cb-work.done   { background: #eda100; }
+.cb-social.done { background: #e87ba4; }
+.cb.done[style*="background"] { border-color: transparent; }
+.prog-wrap { display: flex; align-items: center; gap: 5px; justify-content: center; min-width: 90px; }
+.progress-bar-wrap { width: 60px; height: 8px; background: rgba(255,255,255,0.07); border-radius: 999px; overflow: hidden; flex-shrink: 0; }
+.progress-bar-fill { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+.pct-text { font-size: 0.75rem; color: #94a3b8; min-width: 28px; }
+.streak-cell, .best-cell { font-size: 0.8rem; color: #e2e8f0; white-space: nowrap; text-align: center; min-width: 46px; }
+.action-btns { display: flex; gap: 5px; justify-content: center; align-items: center; }
+.btn-edit, .btn-del {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(148,163,184,0.15);
+  cursor: pointer; width: 26px; height: 26px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; font-size: 0.8rem;
+  transition: background 0.2s, transform 0.2s;
+}
+.btn-edit:hover { background: rgba(42,122,214,0.2); transform: translateY(-1px); }
+.btn-del:hover  { background: rgba(192,57,43,0.2);  transform: translateY(-1px); }
+.week-sep { width: 5px; }
+.inline-edit-wrap { display: flex; align-items: center; gap: 5px; }
+.inline-edit-name {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.24);
+  color: #eef2ff; padding: 6px 9px; border-radius: 10px; font-size: 0.85rem; width: 130px; outline: none;
+}
+.btn-confirm { background: #1baf7a; border: none; color: #fff; border-radius: 8px; cursor: pointer; font-size: 0.82rem; padding: 6px 10px; }
+.btn-cancel-inline {
+  font-size: 0.75rem; padding: 4px 7px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px; cursor: pointer; color: #94a3b8;
+}
+.footer-tip { text-align: center; font-size: 0.78rem; color: #374151; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(148,163,184,0.07); }
+
+/* ── MODAL ── */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+.modal-bg.open { display: flex; }
+.modal { background: #0c101c; border: 1px solid rgba(148,163,184,0.18); border-radius: 20px; padding: 24px; width: min(340px,94%); box-shadow: 0 40px 80px rgba(0,0,0,0.4); }
+.modal h3 { font-size: 1.05rem; color: #f8fafc; margin-bottom: 16px; }
+.modal input {
+  width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(148,163,184,0.16);
+  color: #eef2ff; padding: 11px 13px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 11px; outline: none;
+}
+.modal-label { font-size: 0.78rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: block; }
+.modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+.modal-btns button { padding: 9px 15px; border-radius: 12px; border: 1px solid rgba(148,163,184,0.18); cursor: pointer; font-size: 0.9rem; }
+.btn-cancel { background: rgba(255,255,255,0.05); color: #cbd5e1; }
+.btn-save   { background: #2a78d6; color: #fff; border-color: transparent; }
+.confirm-modal { background: #0c101c; border: 1px solid rgba(192,57,43,0.24); border-radius: 20px; padding: 22px; width: min(320px,94%); }
+.confirm-modal h3 { font-size: 0.98rem; color: #f8fafc; margin-bottom: 9px; }
+.confirm-modal p  { font-size: 0.9rem; color: #cbd5e1; margin-bottom: 16px; }
+.btn-del-confirm { background: #c0392b; color: #fff; border-color: transparent; }
+/* ── CATEGORY DROPDOWN ITEMS (dynamic) ── */
+.dd-item-cat { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dd-item-cat-main { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.dd-item-cat-icon { font-size: 0.9rem; line-height: 1; flex-shrink: 0; }
+.dd-item-cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dd-item-create { display: flex; align-items: center; gap: 7px; color: #7fb4f5; font-weight: 600; border-top: 1px solid rgba(148,163,184,0.14); margin-top: 4px; padding-top: 9px; }
+.dd-item-create:hover { background: rgba(42,122,214,0.15); color: #9ec7ff; }
+.dd-item-cat-actions { display: none; align-items: center; gap: 4px; flex-shrink: 0; }
+.dd-item-cat:hover .dd-item-cat-actions { display: flex; }
+.dd-item-cat-actions button {
+  background: rgba(255,255,255,0.06); border: none; color: #cbd5e1; width: 20px; height: 20px;
+  border-radius: 5px; cursor: pointer; font-size: 0.65rem; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.dd-item-cat-actions button:hover.edit-cat-btn { background: rgba(42,122,214,0.3); color: #fff; }
+.dd-item-cat-actions button:hover.del-cat-btn  { background: rgba(192,57,43,0.35); color: #fff; }
+
+/* ── CATEGORY MODAL ── */
+.cat-modal-bg {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 300;
+  align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease;
+}
+.cat-modal-bg.open { display: flex; }
+.cat-modal-bg.show { opacity: 1; }
+.cat-modal {
+  background: #0c101c; border: 1px solid rgba(148,163,184,0.18); border-radius: 20px;
+  padding: 22px; width: min(320px,92%); box-shadow: 0 40px 80px rgba(0,0,0,0.45);
+  transform: scale(0.92) translateY(8px); opacity: 0; transition: transform 0.22s cubic-bezier(.2,.9,.3,1.2), opacity 0.2s ease;
+}
+.cat-modal-bg.show .cat-modal { transform: scale(1) translateY(0); opacity: 1; }
+.cat-modal h3 { font-size: 1rem; color: #f8fafc; margin-bottom: 16px; }
+.cat-modal input[type="text"] {
+  width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(148,163,184,0.16);
+  color: #eef2ff; padding: 10px 12px; border-radius: 12px; font-size: 0.88rem; margin-bottom: 12px; outline: none;
+  transition: border-color 0.15s;
+}
+.cat-modal input[type="text"]:focus { border-color: rgba(42,122,214,0.6); }
+.cat-modal .modal-label { margin-bottom: 7px; }
+.cat-err { font-size: 0.75rem; color: #f0867a; min-height: 1em; margin: -7px 0 9px; }
+.icon-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.icon-input {
+  width: 60px; height: 40px; text-align: center; font-size: 1.2rem; flex-shrink: 0;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(148,163,184,0.16); border-radius: 11px;
+  color: #eef2ff; outline: none; transition: border-color 0.15s;
+}
+.icon-input:focus { border-color: rgba(42,122,214,0.6); }
+.color-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.color-swatch {
+  width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent;
+  transition: transform 0.15s, border-color 0.15s; position: relative;
+}
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.selected { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,0.6); }
+.color-swatch.selected::after { content: '✓'; position: absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.7rem; text-shadow:0 1px 2px rgba(0,0,0,0.6); }
+.color-custom-wrap { position: relative; width: 26px; height: 26px; }
+.color-custom-wrap input[type="color"] {
+  width: 26px; height: 26px; border: none; border-radius: 50%; cursor: pointer; padding: 0;
+  background: conic-gradient(red,yellow,lime,cyan,blue,magenta,red);
+}
+.color-custom-wrap input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; border-radius: 50%; }
+.color-custom-wrap input[type="color"]::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; }
+.cat-preview { display: flex; align-items: center; gap: 8px; margin: 14px 0 2px; padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(148,163,184,0.12); border-radius: 12px; }
+.cat-preview-label { font-size: 0.74rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.07em; margin-right: 2px; }
+
+.stats-modal { background: #0c101c; border: 1px solid rgba(148,163,184,0.18); border-radius: 24px; padding: 28px; width: min(780px,92vw); max-height: 85vh; overflow-y: auto; position: relative; }
+.stats-modal h2 { font-size: 1.3rem; color: #f8fafc; margin-bottom: 20px; }
+.stats-close { position: absolute; top: 18px; right: 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.18); color: #cbd5e1; width: 36px; height: 36px; border-radius: 9px; cursor: pointer; font-size: 1.1rem; }
+.stats-grid-main { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 14px; margin-bottom: 20px; }
+.stat-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(148,163,184,0.13); border-radius: 14px; padding: 14px; text-align: center; }
+.stat-box-label { font-size: 0.78rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+.stat-box-value { font-size: 1.6rem; font-weight: 800; color: #f8fafc; }
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 16px; margin-bottom: 20px; }
+.chart-section { background: rgba(255,255,255,0.02); border: 1px solid rgba(148,163,184,0.11); border-radius: 14px; padding: 16px; }
+.chart-title { font-size: 0.9rem; font-weight: 600; color: #e2e8f0; margin-bottom: 10px; }
+.category-bars { display: flex; flex-direction: column; gap: 10px; }
+.category-bar { display: flex; align-items: center; gap: 9px; }
+.category-bar-label { font-size: 0.82rem; color: #cbd5e1; min-width: 90px; }
+.category-bar-track { flex:1; height:7px; background: rgba(255,255,255,0.06); border-radius:999px; overflow:hidden; }
+.category-bar-fill { height:100%; border-radius:999px; transition: width 0.3s; }
+.habits-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.habit-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(148,163,184,0.11); border-radius: 10px; padding: 11px; text-align: center; }
+.habit-card-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px; }
+.habit-card-name { font-size: 0.9rem; color: #f8fafc; font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <div class="header">
+    <div>
+      <div class="title">Habit Tracker</div>
+      <div class="subtitle">Monthly Overview</div>
+    </div>
+    <div class="month-nav">
+      <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+      <span class="month-label" id="monthLabel"></span>
+      <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-label">Current Streak</div><div class="stat-value" id="streakValue">0</div></div>
+    <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-label">Monthly Completion</div><div class="stat-value" id="completionValue">0%</div></div>
+    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-label">Today's Habits</div><div class="stat-value" id="todayValue">0/0</div></div>
+    <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-label">Best Habit</div><div class="stat-value" id="bestHabitValue">—</div></div>
+  </div>
+
+  <div class="week-summary" id="weekSummary"></div>
+
+  <div class="toolbar">
+    <span class="toolbar-title">ALL HABITS</span>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" placeholder="Search habits..." oninput="applyFilters()" />
+    </div>
+
+    <!-- Category dropdown -->
+    <div class="dd-wrap" id="ddCatWrap">
+      <div class="dd-trigger" id="ddCatTrigger" onclick="toggleDD('ddCat')">
+        <span id="ddCatLabel">All Categories</span>
+        <span class="dd-arrow">▼</span>
+      </div>
+      <div class="dd-menu" id="ddCatMenu"></div>
+    </div>
+
+    <!-- Sort dropdown -->
+    <div class="dd-wrap" id="ddSortWrap">
+      <div class="dd-trigger" id="ddSortTrigger" onclick="toggleDD('ddSort')">
+        <span id="ddSortLabel">Sort: Default</span>
+        <span class="dd-arrow">▼</span>
+      </div>
+      <div class="dd-menu" id="ddSortMenu">
+        <div class="dd-item selected" data-val="default" onclick="selectDD('ddSort','default','Sort: Default')">Sort: Default</div>
+        <div class="dd-item" data-val="name" onclick="selectDD('ddSort','name','Sort: Name')">Sort: Name</div>
+        <div class="dd-item" data-val="pct"  onclick="selectDD('ddSort','pct','Sort: Progress')">Sort: Progress</div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <button class="toolbar-btn" onclick="openStats()">📊 Statistics</button>
+    <button class="toolbar-btn" onclick="exportData()">⬇ Export</button>
+    <button class="toolbar-btn primary" onclick="openModal()">＋ Add Habit</button>
+  </div>
+
+  <div class="table-wrap">
+    <table id="habitTable">
+      <thead id="tableHead"></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+  <div class="footer-tip">Tip: Click on any day to toggle completion. Data is saved automatically.</div>
+</div>
+
+<!-- Add Habit Modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>Add New Habit</h3>
+    <input type="text" id="habitInput" placeholder="Habit name (e.g. Read 30 min)"
+      onkeydown="if(event.key==='Enter')addHabit();" />
+    <label class="modal-label">Category</label>
+    <!-- Modal category dropdown -->
+    <div class="dd-wrap" id="ddModalCatWrap" style="width:100%;margin-bottom:4px;">
+      <div class="dd-trigger" id="ddModalCatTrigger" onclick="toggleDD('ddModalCat')" style="width:100%;justify-content:space-between;">
+        <span id="ddModalCatLabel">Sleep</span>
+        <span class="dd-arrow">▼</span>
+      </div>
+      <div class="dd-menu modal-dd" id="ddModalCatMenu" style="width:100%;"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="addHabit()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Category Modal -->
+<div class="cat-modal-bg" id="catModalBg" onclick="if(event.target===this)closeCatModal()">
+  <div class="cat-modal">
+    <h3 id="catModalTitle">Create New Category</h3>
+    <label class="modal-label">Category Name</label>
+    <input type="text" id="catNameInput" placeholder="e.g. Finance" maxlength="20"
+      oninput="updateCatPreview()" onkeydown="if(event.key==='Enter')saveCategoryModal();" />
+    <div class="cat-err" id="catNameErr"></div>
+
+    <label class="modal-label">Icon</label>
+    <div class="icon-row">
+      <input type="text" id="catIconInput" class="icon-input" maxlength="2" value="✨" oninput="updateCatPreview()" placeholder="✨" />
+    </div>
+
+    <label class="modal-label">Color</label>
+    <div class="color-row" id="catColorRow">
+      <div class="color-custom-wrap">
+        <input type="color" id="catColorCustom" value="#2a78d6" oninput="selectCatColor(this.value)" title="Custom color" />
+      </div>
+    </div>
+
+    <div class="cat-preview" id="catPreview"></div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeCatModal()">Cancel</button>
+      <button class="btn-save" id="catModalSaveBtn" onclick="saveCategoryModal()">Create Category</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal-bg" id="confirmBg">
+  <div class="confirm-modal">
+    <h3>Delete Habit?</h3>
+    <p id="confirmText">Are you sure?</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-save btn-del-confirm" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Statistics Modal -->
+<div class="modal-bg" id="statsBg">
+  <div class="stats-modal">
+    <button class="stats-close" onclick="closeStats()">×</button>
+    <h2>📊 Habit Analytics</h2>
+    <div class="stats-grid-main">
+      <div class="stat-box"><div class="stat-box-label">Current Streak</div><div class="stat-box-value" id="statsStreakCurrent">0</div></div>
+      <div class="stat-box"><div class="stat-box-label">Longest Streak</div><div class="stat-box-value" id="statsStreakLongest">0</div></div>
+      <div class="stat-box"><div class="stat-box-label">Total Habits</div><div class="stat-box-value" id="statsTotalHabits">0</div></div>
+      <div class="stat-box"><div class="stat-box-label">Overall Completion</div><div class="stat-box-value" id="statsOverallCompletion">0%</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-section"><div class="chart-title">Weekly Completion</div><canvas id="weeklyChart" width="280" height="130"></canvas></div>
+      <div class="chart-section"><div class="chart-title">Category Breakdown</div><div class="category-bars" id="categoryBars"></div></div>
+    </div>
+    <div class="chart-section"><div class="chart-title">Top Performers</div><div class="habits-comparison" id="habitComparison"></div></div>
+  </div>
+</div>
+
+<script>
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DEFAULT_CATS = {
+  sleep:  { label:'Sleep',  cls:'tag-sleep',  cbcls:'cb-sleep',  color:'#2a78d6', icon:'😴', builtin:true },
+  health: { label:'Health', cls:'tag-health', cbcls:'cb-health', color:'#1baf7a', icon:'💪', builtin:true },
+  mind:   { label:'Mind',   cls:'tag-mind',   cbcls:'cb-mind',   color:'#4a3aa7', icon:'🧠', builtin:true },
+  work:   { label:'Work',   cls:'tag-work',   cbcls:'cb-work',   color:'#eda100', icon:'💼', builtin:true },
+  social: { label:'Social', cls:'tag-social', cbcls:'cb-social', color:'#e87ba4', icon:'👥', builtin:true },
+};
+const LS_CATS = 'habitTracker_customCats';
+const COLOR_PRESETS = ['#2a78d6','#1baf7a','#4a3aa7','#eda100','#e87ba4','#3ac7a8','#f0a830','#c0392b','#9b87e5','#06b6d4','#84cc16','#f43f5e'];
+
+function loadCustomCats(){
+  try{
+    const raw = localStorage.getItem(LS_CATS);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveCustomCats(){
+  try{ localStorage.setItem(LS_CATS, JSON.stringify(customCats)); }catch(e){}
+}
+let customCats = loadCustomCats();
+function allCats(){ return Object.assign({}, DEFAULT_CATS, customCats); }
+const CATS = allCats();
+function refreshCats(){ Object.keys(CATS).forEach(k=>delete CATS[k]); Object.assign(CATS, allCats()); }
+const DONUT_COLORS = ['#2a78d6','#9b87e5','#3ac7a8','#e87ba4','#f0a830'];
+const LS_HABITS = 'habitTracker_habits';
+const LS_CHECKS = 'habitTracker_checks';
+
+let today = new Date();
+let curYear = today.getFullYear(), curMonth = today.getMonth();
+let editingId = null, deletingId = null, filteredHabits = null;
+
+// ── Custom Dropdown logic ──
+const ddState = {};  // { id: currentValue }
+
+function toggleDD(id) {
+  const menu    = document.getElementById(id + 'Menu');
+  const trigger = document.getElementById(id + 'Trigger');
+  const isOpen  = menu.classList.contains('open');
+  // close all
+  document.querySelectorAll('.dd-menu').forEach(m => m.classList.remove('open'));
+  document.querySelectorAll('.dd-trigger').forEach(t => t.classList.remove('open'));
+  if (!isOpen) {
+    menu.classList.add('open');
+    trigger.classList.add('open');
+  }
+}
+
+function selectDD(id, val, label) {
+  ddState[id] = val;
+  document.getElementById(id + 'Label').textContent = label;
+  // update selected highlight
+  document.querySelectorAll(`#${id}Menu .dd-item`).forEach(el => {
+    el.classList.toggle('selected', el.dataset.val === val);
+  });
+  // close
+  document.getElementById(id + 'Menu').classList.remove('open');
+  document.getElementById(id + 'Trigger').classList.remove('open');
+  // trigger filter
+  if (id === 'ddCat' || id === 'ddSort') applyFilters();
+}
+
+// close dropdowns when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dd-wrap')) {
+    document.querySelectorAll('.dd-menu').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('.dd-trigger').forEach(t => t.classList.remove('open'));
+  }
+});
+
+// ── Data ──
+function loadData() {
+  try {
+    const h = localStorage.getItem(LS_HABITS);
+    const c = localStorage.getItem(LS_CHECKS);
+    habits = h ? JSON.parse(h) : defaultHabits();
+    checks = c ? JSON.parse(c) : defaultChecks();
+  } catch(e) { habits = defaultHabits(); checks = defaultChecks(); }
+}
+function saveData() {
+  try {
+    localStorage.setItem(LS_HABITS, JSON.stringify(habits));
+    localStorage.setItem(LS_CHECKS, JSON.stringify(checks));
+  } catch(e) {}
+}
+function defaultHabits() {
+  return [
+    {id:1,name:'Sleep 8 hours',cat:'sleep'},
+    {id:2,name:'Exercise',cat:'health'},
+    {id:3,name:'Meditate',cat:'mind'},
+    {id:4,name:'Read',cat:'mind'},
+    {id:5,name:'No junk food',cat:'health'},
+    {id:6,name:'Deep work 2h',cat:'work'},
+  ];
+}
+function defaultChecks() {
+  const y=today.getFullYear(), m=today.getMonth(), d=today.getDate(), c={};
+  const p={1:[1,2,3,4,5,6,29],2:[1,2,3,4,8,29],3:[2,7,29],4:[2,5,8,10,12,29],5:[1,2,3,4,6,7,10,29],6:[5,29]};
+  Object.entries(p).forEach(([hid,days])=>days.filter(dd=>dd<=d).forEach(dd=>{c[`${y}-${m}-${hid}-${dd}`]=true;}));
+  return c;
+}
+let habits=[], checks={};
+loadData();
+
+// ── Helpers ──
+function key(hid,day){return `${curYear}-${curMonth}-${hid}-${day}`;}
+function daysInMonth(y,m){return new Date(y,m+1,0).getDate();}
+function firstDay(y,m){return new Date(y,m,1).getDay();}
+function getCheck(hid,day){return !!checks[key(hid,day)];}
+function toggleCheck(hid,day){checks[key(hid,day)]=!checks[key(hid,day)];saveData();render();}
+
+function getWeeks(y,m){
+  const days=daysInMonth(y,m),weeks=[],fd=firstDay(y,m);
+  let week=[];
+  for(let d=1;d<=days;d++){
+    week.push(d);
+    if((fd+d-1)%7===6||d===days){weeks.push(week);week=[];}
+  }
+  return weeks;
+}
+
+function weekPct(days){
+  if(!habits.length||!days.length)return 0;
+  let t=habits.length*days.length,done=0;
+  for(const h of habits)for(const d of days)if(getCheck(h.id,d))done++;
+  return t?Math.round(done/t*100):0;
+}
+function monthPct(){
+  const days=daysInMonth(curYear,curMonth);
+  if(!habits.length||!days)return 0;
+  let t=habits.length*days,done=0;
+  for(const h of habits)for(let d=1;d<=days;d++)if(getCheck(h.id,d))done++;
+  return Math.round(done/t*100);
+}
+function habitPct(hid){
+  const days=daysInMonth(curYear,curMonth);
+  let done=0;
+  for(let d=1;d<=days;d++)if(getCheck(hid,d))done++;
+  return Math.round(done/days*100);
+}
+function habitStreak(hid){
+  let s=0,d=new Date(today);
+  while(true){
+    const y=d.getFullYear(),m=d.getMonth(),day=d.getDate();
+    if(!checks[`${y}-${m}-${hid}-${day}`])break;
+    s++;d.setDate(d.getDate()-1);
+  }
+  return s;
+}
+function habitBest(hid){
+  let best=0,cur=0,days=daysInMonth(curYear,curMonth);
+  for(let d=1;d<=days;d++){if(getCheck(hid,d)){cur++;best=Math.max(best,cur);}else cur=0;}
+  return best;
+}
+function currentStreak(){
+  if(!habits.length)return 0;
+  let s=0,d=new Date(today);
+  while(true){
+    const y=d.getFullYear(),m=d.getMonth(),day=d.getDate();
+    if(!habits.every(h=>!!checks[`${y}-${m}-${h.id}-${day}`]))break;
+    s++;d.setDate(d.getDate()-1);
+  }
+  return s;
+}
+function todayCompletion(){
+  const y=today.getFullYear(),m=today.getMonth(),d=today.getDate();
+  return{done:habits.filter(h=>checks[`${y}-${m}-${h.id}-${d}`]).length,total:habits.length};
+}
+function bestHabit(){
+  if(!habits.length)return{name:'—'};
+  return habits.reduce((b,h)=>habitPct(h.id)>habitPct(b.id)?h:b,habits[0]);
+}
+
+function donutSVG(pct,color){
+  const r=13.5,circ=2*Math.PI*r,filled=(pct/100)*circ;
+  return `<svg viewBox="0 0 36 36" class="donut"><circle class="track" cx="18" cy="18" r="${r}"/>
+    <circle cx="18" cy="18" r="${r}" stroke="${color}" stroke-dasharray="${filled} ${circ-filled}"
+    stroke-dashoffset="${circ*.25}" transform="rotate(-90 18 18)" stroke-linecap="round" fill="none" stroke-width="6"/></svg>`;
+}
+
+function renderStats(){
+  const s=currentStreak(),tc=todayCompletion(),mp=monthPct(),bh=bestHabit();
+  document.getElementById('streakValue').textContent    = s+(s===1?' day':' days');
+  document.getElementById('completionValue').textContent= mp+'%';
+  document.getElementById('todayValue').textContent     = tc.done+'/'+tc.total;
+  document.getElementById('bestHabitValue').textContent = bh.name;
+}
+
+// ── Dynamic category dropdown rendering ──
+function catItemHTML(ddId, val, c, selected){
+  const isBuiltin = c.builtin;
+  return `<div class="dd-item dd-item-cat${selected?' selected':''}" data-val="${val}">
+      <span class="dd-item-cat-main" onclick="selectDD('${ddId}','${val}','${escAttr(c.icon)} ${escAttr(c.label)}')">
+        <span class="dd-item-cat-icon">${c.icon}</span><span>${c.label}</span>
+      </span>
+      ${isBuiltin ? '' : `<span class="dd-item-cat-actions">
+        <button class="edit-cat-btn" title="Edit" onclick="event.stopPropagation();openCatModal('${val}')">✏️</button>
+        <button class="del-cat-btn" title="Delete" onclick="event.stopPropagation();deleteCategory('${val}')">🗑</button>
+      </span>`}
+    </div>`;
+}
+function escAttr(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+function renderCatDropdown(ddId, opts){
+  const { includeAll, menuId } = opts;
+  const menu = document.getElementById(menuId || (ddId+'Menu'));
+  if(!menu) return;
+  const current = ddState[ddId];
+  let html = '';
+  if(includeAll){
+    html += `<div class="dd-item${!current?' selected':''}" data-val="" onclick="selectDD('${ddId}','','All Categories')">All Categories</div>`;
+  }
+  Object.entries(CATS).forEach(([v,c])=>{
+    html += catItemHTML(ddId, v, c, v===current);
+  });
+  html += `<div class="dd-item dd-item-create" onclick="openCatModal()">➕ Create New Category</div>`;
+  menu.innerHTML = html;
+}
+
+function renderAllCatDropdowns(){
+  renderCatDropdown('ddCat', {includeAll:true});
+  renderCatDropdown('ddModalCat', {includeAll:false});
+}
+
+// ── Create / Edit / Delete Category ──
+let catEditingKey = null;
+let selectedCatColor = COLOR_PRESETS[0];
+
+function openCatModal(editKey){
+  catEditingKey = editKey || null;
+  const titleEl = document.getElementById('catModalTitle');
+  const nameInput = document.getElementById('catNameInput');
+  const iconInput = document.getElementById('catIconInput');
+  const saveBtn = document.getElementById('catModalSaveBtn');
+  document.getElementById('catNameErr').textContent = '';
+
+  if(editKey && customCats[editKey]){
+    const c = customCats[editKey];
+    titleEl.textContent = 'Edit Category';
+    nameInput.value = c.label;
+    iconInput.value = c.icon;
+    selectedCatColor = c.color;
+    saveBtn.textContent = 'Save Changes';
+  } else {
+    titleEl.textContent = 'Create New Category';
+    nameInput.value = '';
+    iconInput.value = '✨';
+    selectedCatColor = COLOR_PRESETS[Math.floor(Math.random()*COLOR_PRESETS.length)];
+    saveBtn.textContent = 'Create Category';
+  }
+  document.getElementById('catColorCustom').value = selectedCatColor;
+
+  // icon: free text input, user types their own emoji
+
+  // color swatches
+  const colorRow = document.getElementById('catColorRow');
+  colorRow.querySelectorAll('.color-swatch').forEach(el=>el.remove());
+  const customWrap = colorRow.querySelector('.color-custom-wrap');
+  COLOR_PRESETS.forEach(col=>{
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch' + (col.toLowerCase()===selectedCatColor.toLowerCase() ? ' selected' : '');
+    sw.style.background = col;
+    sw.dataset.color = col;
+    sw.onclick = ()=>selectCatColor(col);
+    colorRow.insertBefore(sw, customWrap);
+  });
+
+  updateCatPreview();
+
+  // close any open dropdown menus first so they don't sit above modal oddly
+  document.querySelectorAll('.dd-menu').forEach(m=>m.classList.remove('open'));
+  document.querySelectorAll('.dd-trigger').forEach(t=>t.classList.remove('open'));
+
+  const bg = document.getElementById('catModalBg');
+  bg.classList.add('open');
+  requestAnimationFrame(()=>bg.classList.add('show'));
+  setTimeout(()=>nameInput.focus(), 50);
+}
+
+function closeCatModal(){
+  const bg = document.getElementById('catModalBg');
+  bg.classList.remove('show');
+  setTimeout(()=>bg.classList.remove('open'), 200);
+  catEditingKey = null;
+}
+
+function selectCatColor(col){
+  selectedCatColor = col;
+  document.getElementById('catColorCustom').value = col;
+  document.querySelectorAll('#catColorRow .color-swatch').forEach(el=>{
+    el.classList.toggle('selected', el.dataset.color && el.dataset.color.toLowerCase()===col.toLowerCase());
+  });
+  updateCatPreview();
+}
+
+function updateCatPreview(){
+  const name = document.getElementById('catNameInput').value.trim() || 'Category Name';
+  const icon = document.getElementById('catIconInput').value.trim() || '✨';
+  document.getElementById('catPreview').innerHTML =
+    `<span class="cat-preview-label">Preview:</span>
+     <span class="tag" style="background:${selectedCatColor}2e;color:${selectedCatColor};">${icon} ${name}</span>`;
+}
+
+function slugify(name){
+  let base = name.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'category';
+  let slug = base, i = 1;
+  while(CATS[slug]) slug = `${base}-${i++}`;
+  return slug;
+}
+
+function saveCategoryModal(){
+  const nameInput = document.getElementById('catNameInput');
+  const errEl = document.getElementById('catNameErr');
+  let name = nameInput.value.replace(/\s+/g,' ').trim();
+  const icon = document.getElementById('catIconInput').value.trim() || '✨';
+
+  if(!name){ errEl.textContent = 'Category name cannot be empty.'; nameInput.focus(); return; }
+  if(name.length>20){ errEl.textContent = 'Category name is too long (max 20 characters).'; return; }
+
+  const dupKey = Object.entries(CATS).find(([k,c]) =>
+    c.label.toLowerCase()===name.toLowerCase() && k!==catEditingKey
+  );
+  if(dupKey){ errEl.textContent = 'A category with this name already exists.'; return; }
+
+  errEl.textContent = '';
+
+  if(catEditingKey){
+    // editing existing custom category: name/icon/color editable, key stays the same
+    const c = customCats[catEditingKey];
+    c.label = name; c.icon = icon; c.color = selectedCatColor;
+    saveCustomCats();
+  } else {
+    const key = slugify(name);
+    customCats[key] = { label:name, icon, color:selectedCatColor, builtin:false };
+    saveCustomCats();
+    refreshCats();
+    // auto-select newly created category in whichever dropdown is most relevant
+    ddState['ddModalCat'] = key;
+    if(document.getElementById('modalBg').classList.contains('open')){
+      document.getElementById('ddModalCatLabel').textContent = `${icon} ${name}`;
+    }
+    ddState['ddCat'] = key;
+    document.getElementById('ddCatLabel').textContent = `${icon} ${name}`;
+    catEditingKey = key;
+  }
+  refreshCats();
+  renderAllCatDropdowns();
+  closeCatModal();
+  filteredHabits=null; applyFilters(); render();
+}
+
+function deleteCategory(key){
+  if(!customCats[key]) return;
+  const c = customCats[key];
+  if(!confirm(`Delete category "${c.label}"? Habits using it will be moved to "Health".`)) return;
+  delete customCats[key];
+  saveCustomCats();
+  refreshCats();
+  // reassign any habits using this category to a safe default
+  habits.forEach(h=>{ if(h.cat===key) h.cat='health'; });
+  saveData();
+  if(ddState['ddCat']===key){ ddState['ddCat']=''; document.getElementById('ddCatLabel').textContent='All Categories'; }
+  if(ddState['ddModalCat']===key){ ddState['ddModalCat']='health'; document.getElementById('ddModalCatLabel').textContent='💪 Health'; }
+  renderAllCatDropdowns();
+  filteredHabits=null; applyFilters(); render();
+}
+
+// ── Inline edit category dropdown (rendered in JS) ──
+function editCatDD(hid, currentCat) {
+  const ddId = `ddEdit${hid}`;
+  return `<div class="dd-wrap" id="${ddId}Wrap">
+    <div class="dd-trigger" id="${ddId}Trigger" onclick="toggleDD('${ddId}')" style="padding:5px 9px;border-radius:9px;">
+      <span id="${ddId}Label">${CATS[currentCat]?.icon||''} ${CATS[currentCat]?.label||'Health'}</span>
+      <span class="dd-arrow">▼</span>
+    </div>
+    <div class="dd-menu" id="${ddId}Menu">
+      ${Object.entries(CATS).map(([v,c])=>catItemHTML(ddId, v, c, v===currentCat)).join('')}
+      <div class="dd-item dd-item-create" onclick="openCatModal()">➕ Create New Category</div>
+    </div>
+  </div>`;
+}
+
+// ── Filters ──
+function applyFilters(){
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  const cat=ddState['ddCat']||'';
+  const sort=ddState['ddSort']||'default';
+  let r=[...habits];
+  if(q)r=r.filter(h=>h.name.toLowerCase().includes(q));
+  if(cat)r=r.filter(h=>h.cat===cat);
+  if(sort==='name')r.sort((a,b)=>a.name.localeCompare(b.name));
+  if(sort==='pct') r.sort((a,b)=>habitPct(b.id)-habitPct(a.id));
+  filteredHabits=r;
+  render();
+}
+
+// ── Export ──
+function exportData(){
+  const days=daysInMonth(curYear,curMonth);
+  const hdr=['Habit','Category',...Array.from({length:days},(_,i)=>'Day '+(i+1))];
+  const rows=habits.map(h=>[h.name,h.cat,...Array.from({length:days},(_,i)=>getCheck(h.id,i+1)?'1':'0')]);
+  const csv=[hdr,...rows].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`habits_${MONTHS[curMonth]}_${curYear}.csv`;
+  a.click();
+}
+
+// ── Render ──
+function render(){
+  document.getElementById('monthLabel').textContent=`${MONTHS[curMonth]} ${curYear}`;
+  renderStats();
+  const weeks=getWeeks(curYear,curMonth);
+
+  // donuts
+  const mp=monthPct();
+  let whtml=`<div class="week-card"><div class="wlabel">MONTHLY</div>${donutSVG(mp,DONUT_COLORS[0])}<div class="wpct">${mp}%</div></div>`;
+  weeks.forEach((w,i)=>{
+    const p=weekPct(w),col=DONUT_COLORS[(i+1)%DONUT_COLORS.length];
+    whtml+=`<div class="week-card"><div class="wlabel">WEEK ${i+1}</div>${donutSVG(p,col)}<div class="wpct">${p}%</div></div>`;
+  });
+  document.getElementById('weekSummary').innerHTML=whtml;
+
+  // table head
+  let head=`<tr><th class="habit-col">HABIT</th><th></th>`;
+  weeks.forEach((w,wi)=>{
+    w.forEach(d=>{
+      const isToday=curYear===today.getFullYear()&&curMonth===today.getMonth()&&d===today.getDate();
+      head+=`<th style="${isToday?'color:#2a78d6;font-weight:800;':''}">${d}</th>`;
+    });
+    if(wi<weeks.length-1)head+=`<th class="week-sep"></th>`;
+  });
+  head+=`<th style="min-width:90px">Progress</th><th>Streak</th><th>Best</th><th>Actions</th></tr>`;
+  document.getElementById('tableHead').innerHTML=head;
+
+  // table body
+  const display=filteredHabits||habits;
+  let body='';
+  display.forEach(h=>{
+    const cat=CATS[h.cat]||CATS.health;
+    const hp=habitPct(h.id), str=habitStreak(h.id), bst=habitBest(h.id);
+
+    if(editingId===h.id){
+      body+=`<tr>
+        <td class="habit-name" colspan="2">
+          <div class="inline-edit-wrap">
+            <input id="edit-name-${h.id}" class="inline-edit-name" value="${h.name.replace(/"/g,'&quot;')}"
+              onkeydown="if(event.key==='Enter')confirmEdit(${h.id});if(event.key==='Escape')cancelEdit();" />
+            ${editCatDD(h.id, h.cat)}
+            <button class="btn-confirm" onclick="confirmEdit(${h.id})">✓</button>
+            <button class="btn-cancel-inline" onclick="cancelEdit()">✕</button>
+          </div>
+        </td>`;
+      weeks.forEach((w,wi)=>{
+        w.forEach(d=>{const done=getCheck(h.id,d);body+=`<td><span class="cb ${done?'done':''}" style="${done?`background:${cat.color};`:''}" onclick="toggleCheck(${h.id},${d})"></span></td>`;});
+        if(wi<weeks.length-1)body+=`<td></td>`;
+      });
+      body+=`<td><div class="prog-wrap"><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${hp}%;background:${cat.color};"></div></div><span class="pct-text">${hp}%</span></div></td>
+        <td class="streak-cell">🔥 ${str}</td><td class="best-cell">🏆 ${bst}</td><td></td></tr>`;
+    } else {
+      body+=`<tr>
+        <td class="habit-name">${h.name}</td>
+        <td class="cat-tag"><span class="tag" style="background:${cat.color}2e;color:${cat.color};">${cat.icon||''} ${cat.label}</span></td>`;
+      weeks.forEach((w,wi)=>{
+        w.forEach(d=>{const done=getCheck(h.id,d);body+=`<td><span class="cb ${done?'done':''}" style="${done?`background:${cat.color};`:''}" onclick="toggleCheck(${h.id},${d})" role="checkbox" aria-checked="${done}"></span></td>`;});
+        if(wi<weeks.length-1)body+=`<td class="week-sep"></td>`;
+      });
+      body+=`<td><div class="prog-wrap"><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${hp}%;background:${cat.color};"></div></div><span class="pct-text">${hp}%</span></div></td>
+        <td class="streak-cell">🔥 ${str}</td>
+        <td class="best-cell">🏆 ${bst}</td>
+        <td><div class="action-btns">
+          <button class="btn-edit" onclick="startEdit(${h.id})" title="Edit">✏️</button>
+          <button class="btn-del"  onclick="askDelete(${h.id})" title="Delete">🗑</button>
+        </div></td></tr>`;
+    }
+  });
+  document.getElementById('tableBody').innerHTML=body;
+}
+
+function changeMonth(dir){
+  curMonth+=dir;
+  if(curMonth>11){curMonth=0;curYear++;}
+  if(curMonth<0) {curMonth=11;curYear--;}
+  filteredHabits=null; render();
+}
+
+function openModal() {
+  document.getElementById('modalBg').classList.add('open');
+  document.getElementById('habitInput').focus();
+  if(!ddState['ddModalCat'] || !CATS[ddState['ddModalCat']]){
+    const c = CATS['sleep'];
+    ddState['ddModalCat']='sleep';
+    document.getElementById('ddModalCatLabel').textContent = `${c.icon} ${c.label}`;
+    renderCatDropdown('ddModalCat',{includeAll:false});
+  }
+}
+function closeModal(){document.getElementById('modalBg').classList.remove('open');document.getElementById('habitInput').value='';}
+function addHabit(){
+  const name=document.getElementById('habitInput').value.trim();
+  const cat=ddState['ddModalCat']||'sleep';
+  if(!name)return;
+  habits.push({id:Date.now(),name,cat});
+  saveData();closeModal();filteredHabits=null;render();
+}
+
+function startEdit(hid){editingId=hid;render();const el=document.getElementById('edit-name-'+hid);if(el){el.focus();el.select();}}
+function confirmEdit(hid){
+  const ne=document.getElementById('edit-name-'+hid);
+  if(!ne)return;
+  const nm=ne.value.trim();if(!nm)return;
+  const h=habits.find(x=>x.id===hid);
+  if(h){h.name=nm;h.cat=ddState[`ddEdit${hid}`]||h.cat;}
+  editingId=null;saveData();render();
+}
+function cancelEdit(){editingId=null;render();}
+
+function askDelete(hid){
+  deletingId=hid;
+  const h=habits.find(x=>x.id===hid);
+  document.getElementById('confirmText').textContent=`Delete "${h?h.name:'this habit'}"? All data will be lost.`;
+  document.getElementById('confirmBg').classList.add('open');
+}
+function closeConfirm(){deletingId=null;document.getElementById('confirmBg').classList.remove('open');}
+function confirmDelete(){
+  if(deletingId===null)return;
+  Object.keys(checks).forEach(k=>{const p=k.split('-');if(p.length===4 && p[2]===String(deletingId))delete checks[k];});
+  habits=habits.filter(h=>h.id!==deletingId);
+  saveData();closeConfirm();filteredHabits=null;render();
+}
+
+function openStats(){document.getElementById('statsBg').classList.add('open');renderStatsModal();}
+function closeStats(){document.getElementById('statsBg').classList.remove('open');}
+function renderStatsModal(){
+  const s=currentStreak();
+  document.getElementById('statsStreakCurrent').textContent=s+' days';
+  document.getElementById('statsStreakLongest').textContent=s+' days';
+  document.getElementById('statsTotalHabits').textContent=habits.length;
+  document.getElementById('statsOverallCompletion').textContent=monthPct()+'%';
+  const weeks=getWeeks(curYear,curMonth);
+  const canvas=document.getElementById('weeklyChart');
+  if(canvas){
+    const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+    const data=weeks.map(w=>weekPct(w));
+    const barW=(W-40)/data.length-8;
+    data.forEach((v,i)=>{
+      const x=20+i*(barW+8),bh=(v/100)*(H-30),y=H-20-bh;
+      ctx.fillStyle=DONUT_COLORS[i%DONUT_COLORS.length]+'66';
+      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,barW,bh,4);else ctx.rect(x,y,barW,bh);ctx.fill();
+      ctx.fillStyle=DONUT_COLORS[i%DONUT_COLORS.length];
+      ctx.fillRect(x,y,barW,3);
+      ctx.fillStyle='#94a3b8';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(`W${i+1}`,x+barW/2,H-4);
+      ctx.fillStyle='#fff';ctx.fillText(v+'%',x+barW/2,y-4);
+    });
+  }
+  document.getElementById('categoryBars').innerHTML=Object.entries(CATS).map(([k,c])=>{
+    const hs=habits.filter(h=>h.cat===k);
+    const pct=hs.length?Math.round(hs.reduce((s,h)=>s+habitPct(h.id),0)/hs.length):0;
+    return `<div class="category-bar"><span class="category-bar-label">${c.label}</span>
+      <div class="category-bar-track"><div class="category-bar-fill" style="width:${pct}%;background:${c.color};"></div></div>
+      <span style="font-size:0.8rem;color:#94a3b8;min-width:36px">${pct}%</span></div>`;
+  }).join('');
+  document.getElementById('habitComparison').innerHTML=[...habits].sort((a,b)=>habitPct(b.id)-habitPct(a.id)).slice(0,4).map(h=>{
+    const cat=CATS[h.cat]||CATS.health;
+    return `<div class="habit-card"><div class="habit-card-label">${cat.label}</div>
+      <div class="habit-card-name">${h.name}</div>
+      <div style="font-size:1.1rem;font-weight:700;color:${cat.color};margin-top:4px">${habitPct(h.id)}%</div></div>`;
+  }).join('');
+}
+
+renderAllCatDropdowns();
+render();
+</script>
+</body>
+</html>
