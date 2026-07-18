@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Habit Tracker</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div>
+      <div class="title">Habit Tracker</div>
+      <div class="subtitle">Monthly Overview</div>
+    </div>
+    <div class="month-nav">
+      <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+      <span class="month-label" id="monthLabel"></span>
+      <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-label">Current Streak</div><div class="stat-value" id="streakValue">0</div></div>
+    <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-label">Monthly Completion</div><div class="stat-value" id="completionValue">0%</div></div>
+    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-label">Today's Habits</div><div class="stat-value" id="todayValue">0/0</div></div>
+    <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-label">Best Habit</div><div class="stat-value" id="bestHabitValue">—</div></div>
+  </div>
+
+  <div class="week-summary" id="weekSummary"></div>
+
+  <div class="toolbar">
+    <span class="toolbar-title">ALL HABITS</span>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" placeholder="Search habits..." oninput="applyFilters()" />
+    </div>
+
+    <!-- Category dropdown -->
+    <div class="dd-wrap" id="ddCatWrap">
+      <div class="dd-trigger" id="ddCatTrigger" onclick="toggleDD('ddCat')">
+        <span id="ddCatLabel">All Categories</span>
+        <span class="dd-arrow">▼</span>
+      </div>
+      <div class="dd-menu" id="ddCatMenu"></div>
+    </div>
+
+    <!-- Sort dropdown -->
+    <div class="dd-wrap" id="ddSortWrap">
+      <div class="dd-trigger" id="ddSortTrigger" onclick="toggleDD('ddSort')">
+        <span id="ddSortLabel">Sort: Default</span>
+        <span class="dd-arrow">▼</span>
+      </div>
+      <div class="dd-menu" id="ddSortMenu">
+        <div class="dd-item selected" data-val="default" onclick="selectDD('ddSort','default','Sort: Default')">Sort: Default</div>
+        <div class="dd-item" data-val="name" onclick="selectDD('ddSort','name','Sort: Name')">Sort: Name</div>
+        <div class="dd-item" data-val="pct"  onclick="selectDD('ddSort','pct','Sort: Progress')">Sort: Progress</div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <button class="toolbar-btn" onclick="openStats()">📊 Statistics</button>
+    <button class="toolbar-btn" onclick="exportData()">⬇ Export</button>
+    <button class="toolbar-btn primary" onclick="openModal()">＋ Add Habit</button>
+  </div>
+
+  <div class="table-wrap">
+    <table id="habitTable">
+      <thead id="tableHead"></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+  <div class="footer-tip">Tip: Click on any day to toggle completion. Data is saved automatically.</div>
+</div>
+
+<!-- Add Habit Modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>Add New Habit</h3>
+    <input type="text" id="habitInput" placeholder="Habit name (e.g. Read 30 min)"
+      onkeydown="if(event.key==='Enter')addHabit();" />
+    <label class="modal-label">Category</label>
+    <!-- Modal category dropdown -->
+    <div class="dd-wrap" id="ddModalCatWrap" style="width:100%;margin-bottom:4px;">
+      <div class="dd-trigger" id="ddModalCatTrigger" onclick="toggleDD('ddModalCat')" style="width:100%;justify-content:space-between;">
+        <span id="ddModalCatLabel">Sleep</span>
+        <span class="dd-arrow">▼</span>
+      </div>
+      <div class="dd-menu modal-dd" id="ddModalCatMenu" style="width:100%;"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="addHabit()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Category Modal -->
+<div class="cat-modal-bg" id="catModalBg" onclick="if(event.target===this)closeCatModal()">
+  <div class="cat-modal">
+    <h3 id="catModalTitle">Create New Category</h3>
+    <label class="modal-label">Category Name</label>
+    <input type="text" id="catNameInput" placeholder="e.g. Finance" maxlength="20"
+      oninput="updateCatPreview()" onkeydown="if(event.key==='Enter')saveCategoryModal();" />
+    <div class="cat-err" id="catNameErr"></div>
+
+    <label class="modal-label">Icon</label>
+    <div class="icon-row">
+      <input type="text" id="catIconInput" class="icon-input" maxlength="2" value="✨" oninput="updateCatPreview()" placeholder="✨" />
+    </div>
+
+    <label class="modal-label">Color</label>
+    <div class="color-row" id="catColorRow">
+      <div class="color-custom-wrap">
+        <input type="color" id="catColorCustom" value="#2a78d6" oninput="selectCatColor(this.value)" title="Custom color" />
+      </div>
+    </div>
+
+    <div class="cat-preview" id="catPreview"></div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeCatModal()">Cancel</button>
+      <button class="btn-save" id="catModalSaveBtn" onclick="saveCategoryModal()">Create Category</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal-bg" id="confirmBg">
+  <div class="confirm-modal">
+    <h3>Delete Habit?</h3>
+    <p id="confirmText">Are you sure?</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-save btn-del-confirm" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Statistics Modal -->
+<div class="modal-bg" id="statsBg">
+  <div class="stats-modal">
+    <button class="stats-close" onclick="closeStats()">×</button>
+    <h2>📊 Habit Analytics</h2>
+    <div class="stats-grid-main">
+      <div class="stat-box"><div class="stat-box-label">Current Streak</div><div class="stat-box-value" id="statsStreakCurrent">0</div></div>
+      <div class="stat-box"><div class="stat-box-label">Longest Streak</div><div class="stat-box-value" id="statsStreakLongest">0</div></div>
+      <div class="stat-box"><div class="stat-box-label">Total Habits</div><div class="stat-box-value" id="statsTotalHabits">0</div></div>
+      <div class="stat-box"><div class="stat-box-label">Overall Completion</div><div class="stat-box-value" id="statsOverallCompletion">0%</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-section"><div class="chart-title">Weekly Completion</div><canvas id="weeklyChart" width="280" height="130"></canvas></div>
+      <div class="chart-section"><div class="chart-title">Category Breakdown</div><div class="category-bars" id="categoryBars"></div></div>
+    </div>
+    <div class="chart-section"><div class="chart-title">Top Performers</div><div class="habits-comparison" id="habitComparison"></div></div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>
